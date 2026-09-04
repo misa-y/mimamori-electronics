@@ -1,0 +1,5 @@
+DHT sensor library for ESPx
+OneWire
+DallasTemperature
+Adafruit MPU6050
+Adafruit Unified Sensor
