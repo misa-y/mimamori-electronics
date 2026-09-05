@@ -24,7 +24,7 @@ OneWire oneWire(SKIN_TEMP_PIN);
 DallasTemperature skinSensor(&oneWire);
 Adafruit_MPU6050 mpu;
 
-enum class RiskLevel { LOW, MODERATE, HIGH };
+enum class RiskLevel { LOW_RISK, MODERATE_RISK, HIGH_RISK };
 
 struct Reading {
   float airC;
@@ -53,8 +53,8 @@ bool caregiverAlertSent = false;
 
 const char *riskName(RiskLevel level) {
   switch (level) {
-    case RiskLevel::LOW: return "LOW";
-    case RiskLevel::MODERATE: return "MODERATE";
+    case RiskLevel::LOW_RISK: return "LOW";
+    case RiskLevel::MODERATE_RISK: return "MODERATE";
     default: return "HIGH";
   }
 }
@@ -77,7 +77,7 @@ void addFactor(String &factors, const String &text) {
 }
 
 Assessment assessRisk(const Reading &r) {
-  Assessment a{0, RiskLevel::LOW, "none"};
+  Assessment a{0, RiskLevel::LOW_RISK, "none"};
   a.factors = "";
   const float hi = heatIndexC(r.airC, r.humidity);
 
@@ -106,8 +106,8 @@ Assessment assessRisk(const Reading &r) {
   }
 
   // Prototype classification: LOW 0-3, MODERATE 4-6, HIGH 7+.
-  if (a.score >= 7 || hi >= 54.0f || r.skinC >= 37.5f) a.level = RiskLevel::HIGH;
-  else if (a.score >= 4) a.level = RiskLevel::MODERATE;
+  if (a.score >= 7 || hi >= 54.0f || r.skinC >= 37.5f) a.level = RiskLevel::HIGH_RISK;
+  else if (a.score >= 4) a.level = RiskLevel::MODERATE_RISK;
   if (!a.factors.length()) a.factors = "none";
   return a;
 }
@@ -139,10 +139,10 @@ Reading readSensors() {
 }
 
 void tonePattern(RiskLevel level) {
-  if (level == RiskLevel::LOW) {
+  if (level == RiskLevel::LOW_RISK) {
     digitalWrite(LED_PIN, LOW);
     noTone(BUZZER_PIN);
-  } else if (level == RiskLevel::MODERATE) {
+  } else if (level == RiskLevel::MODERATE_RISK) {
     digitalWrite(LED_PIN, HIGH);
     tone(BUZZER_PIN, 880, 180);
   } else {
@@ -152,9 +152,9 @@ void tonePattern(RiskLevel level) {
 }
 
 const char *voiceMessage(RiskLevel level) {
-  if (level == RiskLevel::MODERATE)
+  if (level == RiskLevel::MODERATE_RISK)
     return "Please move somewhere cool and drink water. Press the button when safe.";
-  if (level == RiskLevel::HIGH)
+  if (level == RiskLevel::HIGH_RISK)
     return "Dangerous heat detected. Go to a cool place now. Press the button. Help may be contacted.";
   return "No heat warning.";
 }
@@ -170,7 +170,7 @@ void printReading(const Reading &r, const Assessment &a) {
 }
 
 void handleResponseAndEscalation(RiskLevel level) {
-  if (level == RiskLevel::HIGH) {
+  if (level == RiskLevel::HIGH_RISK) {
     if (!highRiskSince) highRiskSince = millis();
     if (digitalRead(BUTTON_PIN) == LOW) {
       Serial.println("RESPONSE RECEIVED: wearer pressed the safety button.");
